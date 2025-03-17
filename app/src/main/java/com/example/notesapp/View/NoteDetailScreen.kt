@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,8 +20,10 @@ import androidx.navigation.NavController
 import com.example.notesapp.Model.Note
 import com.example.notesapp.ViewModel.NoteViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteDetailScreen(navController: NavController, viewModel: NoteViewModel, noteId: Int?) {
+
     var title by remember { mutableStateOf(TextFieldValue("")) }
     var content by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -32,89 +35,76 @@ fun NoteDetailScreen(navController: NavController, viewModel: NoteViewModel, not
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F5)) // Nền xám nhạt
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Nút quay lại
-        IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF333333))
-        }
-
-        // Tiêu đề
-        BasicTextField(
-            value = title,
-            onValueChange = { title = it },
-            textStyle = MaterialTheme.typography.headlineMedium.copy(
-                color = Color(0xFF333333),
-                fontSize = 24.sp
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                Box {
-                    if (title.text.isEmpty()) {
-                        Text(
-                            text = "Tiêu đề",
-                            color = Color.Gray,
-                            fontSize = 24.sp
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Chỉnh sửa ghi chú", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
-                    innerTextField()
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Nội dung
-        BasicTextField(
-            value = content,
-            onValueChange = { content = it },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = Color(0xFF333333),
-                fontSize = 18.sp
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                Box {
-                    if (content.text.isEmpty()) {
-                        Text(
-                            text = "Nhập nội dung",
-                            color = Color.Gray,
-                            fontSize = 18.sp
-                        )
-                    }
-                    innerTextField()
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Hàng chứa nút Save & Delete
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+                },
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color(0xFF6200EA))
+            )
+        },
+        containerColor = Color(0xFFF5F5F5)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Nút Save
-            IconButton(onClick = {
-                val note = Note(id = noteId ?: 0, title.text, content.text, System.currentTimeMillis())
-                if (noteId == null) viewModel.insert(note) else viewModel.update(note)
-                navController.popBackStack()
-            }) {
-                Icon(Icons.Default.Check, contentDescription = "Save", tint = Color(0xFF4CAF50))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Tiêu đề") },
+                        textStyle = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = content,
+                        onValueChange = { content = it },
+                        label = { Text("Nội dung") },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
-
-            // Nút Delete (chỉ hiển thị khi chỉnh sửa)
-            if (noteId != null) {
-                IconButton(onClick = {
-                    viewModel.delete(Note(noteId, title.text, content.text, System.currentTimeMillis()))
-                    navController.popBackStack()
-                }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFF44336))
+            Spacer(modifier = Modifier.weight(1f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        val note = Note(id = noteId ?: 0, title.text, content.text, System.currentTimeMillis())
+                        if (noteId == null) viewModel.insert(note) else viewModel.update(note)
+                        navController.popBackStack()
+                    },
+                    containerColor = Color(0xFF4CAF50)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
+                }
+                if (noteId != null) {
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.delete(Note(noteId, title.text, content.text, System.currentTimeMillis()))
+                            navController.popBackStack()
+                        },
+                        containerColor = Color(0xFFF44336)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
+                    }
                 }
             }
         }
